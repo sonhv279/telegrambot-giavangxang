@@ -1,5 +1,5 @@
 import type { Telegraf } from 'telegraf';
-import { repositories } from '../container.js';
+import { ensureDatabase, repositories } from '../container.js';
 import { env } from '../config/env.js';
 import { formatDailyDigest, formatFuelAlert, formatGoldAlert } from '../formatters/messages.js';
 import { logger } from '../logger/index.js';
@@ -53,6 +53,7 @@ export const shouldRunDailyDigestNow = (date = new Date()): boolean => {
 
 export const runGoldJob = async (bot: Telegraf | null): Promise<{ crawled: number; alerts: number }> => {
   if (!shouldRunGoldNow()) return { crawled: 0, alerts: 0 };
+  await ensureDatabase();
   const snapshots = await runGoldCrawl();
   if (!bot) return { crawled: snapshots.length, alerts: 0 };
 
@@ -73,6 +74,7 @@ export const runGoldJob = async (bot: Telegraf | null): Promise<{ crawled: numbe
 
 export const runFuelJob = async (bot: Telegraf | null): Promise<{ crawled: number; alerts: number; isNewPeriod: boolean }> => {
   if (!shouldRunFuelNow()) return { crawled: 0, alerts: 0, isNewPeriod: false };
+  await ensureDatabase();
   const result = await runFuelCrawl();
   if (!bot || !result.isNewPeriod) return { crawled: result.snapshots.length, alerts: 0, isNewPeriod: result.isNewPeriod };
 
@@ -94,6 +96,7 @@ export const runFuelJob = async (bot: Telegraf | null): Promise<{ crawled: numbe
 };
 
 export const runDailyDigestJob = async (bot: Telegraf | null): Promise<{ sent: number }> => {
+  await ensureDatabase();
   await runGoldCrawl();
   await runFuelCrawl();
   if (!bot) return { sent: 0 };

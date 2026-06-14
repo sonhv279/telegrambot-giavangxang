@@ -2,11 +2,13 @@ import { env } from './config/env.js';
 import './container.js';
 import { createBot } from './bot/index.js';
 import { telegramCommands } from './bot/botCommands.js';
+import { ensureDatabase } from './container.js';
 import { logger } from './logger/index.js';
 import { startScheduler } from './scheduler/index.js';
 
 const bot = createBot();
 
+await ensureDatabase();
 startScheduler(bot);
 
 if (bot) {
