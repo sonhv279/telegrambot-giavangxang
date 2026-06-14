@@ -115,7 +115,13 @@ export const registerCommands = (bot: Telegraf): void => {
 
   bot.command('sources', async (ctx) => {
     await ensureUser(ctx);
-    await ctx.reply(['Nguồn MVP:', 'Gold: mock SJC/PNJ/DOJI', 'Fuel: mock Petrolimex', '', 'Crawler thật sẽ được thêm theo từng source ở phase tiếp theo.'].join('\n'));
+    await ctx.reply([
+      'Nguồn dữ liệu hiện tại:',
+      'Gold: PNJ API khu vực Hồ Chí Minh',
+      'Fuel: GiaXangHomNay bảng Petrolimex vùng 1/vùng 2',
+      '',
+      'Lưu ý: mock data chỉ chạy local khi DEMO_MODE=true và NODE_ENV không phải production.'
+    ].join('\n'));
   });
 
   bot.command('digest_preview', async (ctx) => {

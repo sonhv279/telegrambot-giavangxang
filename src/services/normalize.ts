@@ -3,7 +3,7 @@ import { sha256 } from '../utils/hash.js';
 
 export const detectGoldCategory = (productName: string): GoldCategory => {
   const name = productName.toLowerCase();
-  if (name.includes('nhẫn') || name.includes('9999') || name.includes('tron tron') || name.includes('tròn trơn')) {
+  if (name.includes('nhẫn') || name.includes('kim bảo') || name.includes('phúc lộc tài') || name.includes('phượng hoàng') || name.includes('tron tron') || name.includes('tròn trơn')) {
     return 'gold_ring';
   }
   return 'gold_bar';
@@ -13,8 +13,8 @@ export const detectFuelGroup = (productName: string): string => {
   const normalized = productName.toUpperCase().replace(/\s+/g, ' ');
   if (normalized.includes('RON95') || normalized.includes('RON 95')) return 'RON95';
   if (normalized.includes('E5') || normalized.includes('RON92') || normalized.includes('RON 92')) return 'E5 RON92';
-  if (normalized.includes('DIESEL') || normalized.includes('ĐIÊZEN')) return 'Diesel';
-  if (normalized.includes('DẦU HỎA') || normalized.includes('KEROSENE')) return 'Dầu hỏa';
+  if (normalized.includes('DIESEL') || normalized.includes('ĐIÊZEN') || /\bDO\b/.test(normalized) || normalized.includes('0,05S') || normalized.includes('0,001S')) return 'Diesel';
+  if (normalized.includes('DẦU HỎA') || normalized.includes('DẦU KO') || normalized.includes('KEROSENE')) return 'Dầu hỏa';
   if (normalized.includes('MAZUT')) return 'Mazut';
   return productName;
 };

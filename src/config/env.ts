@@ -15,6 +15,7 @@ export const env = {
   timezone: process.env.APP_TIMEZONE ?? 'Asia/Ho_Chi_Minh',
   logLevel: process.env.LOG_LEVEL ?? 'info',
   demoMode: (process.env.DEMO_MODE ?? 'true') === 'true',
+  allowMockData: (process.env.DEMO_MODE ?? 'true') === 'true' && process.env.NODE_ENV !== 'production',
   goldDefaultThreshold: numberFromEnv('GOLD_DEFAULT_THRESHOLD', 200_000),
   goldSpreadThreshold: numberFromEnv('GOLD_SPREAD_THRESHOLD', 300_000)
 };

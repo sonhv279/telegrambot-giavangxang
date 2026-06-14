@@ -1,11 +1,12 @@
 import { crawlers, repositories, services } from '../container.js';
+import { env } from '../config/env.js';
 import { logger } from '../logger/index.js';
 import type { PriceSnapshot } from '../types.js';
 
 export const runGoldCrawl = async (): Promise<PriceSnapshot[]> => {
     const runId = await repositories.crawlerRuns.start('mock', 'gold');
   try {
-    const snapshots = await crawlers.mock.crawlGold();
+    const snapshots = env.allowMockData ? await crawlers.mock.crawlGold() : await crawlers.real.crawlGold();
     await repositories.snapshots.insertMany(snapshots);
     await repositories.crawlerRuns.finish(runId, 'success');
     return snapshots;
@@ -20,7 +21,7 @@ export const runGoldCrawl = async (): Promise<PriceSnapshot[]> => {
 export const runFuelCrawl = async (): Promise<{ snapshots: PriceSnapshot[]; isNewPeriod: boolean }> => {
   const runId = await repositories.crawlerRuns.start('mock', 'fuel');
   try {
-    const result = await crawlers.mock.crawlFuel();
+    const result = env.allowMockData ? await crawlers.mock.crawlFuel() : await crawlers.real.crawlFuel();
     await repositories.snapshots.insertMany(result.snapshots);
     const isNewPeriod = await repositories.snapshots.insertFuelPeriod(result.period);
     await repositories.crawlerRuns.finish(runId, 'success');

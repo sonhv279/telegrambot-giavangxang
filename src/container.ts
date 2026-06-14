@@ -5,6 +5,7 @@ import { PriceSnapshotRepository } from './repositories/priceSnapshots.js';
 import { NotificationRepository } from './repositories/notifications.js';
 import { CrawlerRunRepository } from './repositories/crawlerRuns.js';
 import { MockCrawler } from './crawlers/mockCrawler.js';
+import { RealCrawler } from './crawlers/realCrawler.js';
 import { AlertService } from './services/alertService.js';
 
 const pool = getPool();
@@ -23,7 +24,8 @@ export const repositories = {
 };
 
 export const crawlers = {
-  mock: new MockCrawler()
+  mock: new MockCrawler(),
+  real: new RealCrawler()
 };
 
 export const services = {

@@ -10,7 +10,8 @@ export default async function handler(_req: VercelRequest, res: VercelResponse):
       databaseUrl: Boolean(env.databaseUrl),
       publicAppUrl: Boolean(env.publicAppUrl),
       cronSecret: Boolean(env.cronSecret),
-      timezone: env.timezone
+      timezone: env.timezone,
+      allowMockData: env.allowMockData
     },
     db: 'not_checked' as 'not_checked' | 'ok' | string
   };

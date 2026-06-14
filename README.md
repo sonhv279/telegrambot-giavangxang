@@ -21,7 +21,7 @@ PUBLIC_APP_URL=https://your-vercel-app.vercel.app
 CRON_SECRET=some-long-random-secret
 APP_TIMEZONE=Asia/Ho_Chi_Minh
 LOG_LEVEL=info
-DEMO_MODE=true
+DEMO_MODE=false
 GOLD_DEFAULT_THRESHOLD=200000
 GOLD_SPREAD_THRESHOLD=300000
 ```
@@ -31,6 +31,8 @@ Database free gợi ý:
 - Neon Postgres
 - Supabase Postgres
 - Vercel Postgres nếu tài khoản của bạn còn hỗ trợ
+
+`DEMO_MODE=false` là cấu hình production. Mock data chỉ nên dùng khi chạy local để test luồng bot.
 
 ## Deploy Vercel
 

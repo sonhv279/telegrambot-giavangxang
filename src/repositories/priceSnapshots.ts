@@ -1,4 +1,5 @@
 import type { Pool } from 'pg';
+import { env } from '../config/env.js';
 import type { FuelAdjustmentPeriod, PriceSnapshot, PriceType } from '../types.js';
 
 const mapSnapshot = (row: any): PriceSnapshot => ({
@@ -54,10 +55,12 @@ export class PriceSnapshotRepository {
   }
 
   async latestByType(type: PriceType): Promise<PriceSnapshot[]> {
+    const mockFilter = env.allowMockData ? '' : "AND source NOT ILIKE '%mock%'";
     const result = await this.pool.query(`
       SELECT DISTINCT ON (source, product_name, COALESCE(region, '')) *
       FROM price_snapshots
       WHERE type = $1
+        ${mockFilter}
       ORDER BY source, product_name, COALESCE(region, ''), crawled_at DESC, id DESC
     `, [type]);
     return result.rows.map(mapSnapshot).sort((a, b) =>
