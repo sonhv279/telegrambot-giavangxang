@@ -1,11 +1,23 @@
 import type { Telegraf } from 'telegraf';
 import { repositories } from '../container.js';
-import { formatDailyDigest, formatFuelList, formatGoldBest, formatGoldList } from '../formatters/messages.js';
+import { formatDailyDigest, formatFuelList, formatGoldBest, formatGoldList, goldSnapshotKey } from '../formatters/messages.js';
 import { runFuelCrawl, runGoldCrawl } from '../services/crawlRunner.js';
+import type { PriceSnapshot } from '../types.js';
 
 const chatId = (ctx: any): string => String(ctx.chat?.id ?? '');
 
 const ensureUser = (ctx: any) => repositories.users.upsertByTelegramChatId(chatId(ctx));
+
+const isPnjApiGoldSnapshot = (snapshot: PriceSnapshot): boolean =>
+  snapshot.type === 'gold' && snapshot.source.startsWith('PNJ API -');
+
+const previousSnapshotMap = async (snapshots: PriceSnapshot[]): Promise<Map<string, PriceSnapshot | undefined>> => {
+  const entries = await Promise.all(snapshots.map(async (snapshot) => [
+    goldSnapshotKey(snapshot),
+    await repositories.snapshots.previousSnapshot(snapshot)
+  ] as const));
+  return new Map(entries);
+};
 
 export const registerCommands = (bot: Telegraf): void => {
   bot.start(async (ctx) => {
@@ -49,16 +61,15 @@ export const registerCommands = (bot: Telegraf): void => {
 
   bot.command('gold', async (ctx) => {
     await ensureUser(ctx);
-    let snapshots = await repositories.snapshots.latestByType('gold');
-    if (snapshots.length === 0) {
-      await runGoldCrawl();
-      snapshots = await repositories.snapshots.latestByType('gold');
-    }
-    await ctx.reply(formatGoldList(snapshots));
+    await runGoldCrawl();
+    const snapshots = await repositories.snapshots.latestByType('gold');
+    const previousByKey = await previousSnapshotMap(snapshots.filter(isPnjApiGoldSnapshot));
+    await ctx.reply(formatGoldList(snapshots, previousByKey));
   });
 
   bot.command('gold_best', async (ctx) => {
     await ensureUser(ctx);
+    await runGoldCrawl();
     const snapshots = await repositories.snapshots.latestByType('gold');
     await ctx.reply(formatGoldBest(snapshots));
   });
@@ -117,7 +128,8 @@ export const registerCommands = (bot: Telegraf): void => {
     await ensureUser(ctx);
     await ctx.reply([
       'Nguồn dữ liệu hiện tại:',
-      'Gold: giavang.org, chỉ lấy Vàng miếng SJC và Vàng nhẫn 1 chỉ',
+      'Gold /gold: PNJ API TP. Hồ Chí Minh, chỉ lấy Vàng miếng SJC và Vàng nhẫn 1 chỉ',
+      'Gold /gold_best: giavang.org, so sánh các hệ thống tại TP. Hồ Chí Minh',
       'Fuel: GiaXangHomNay bảng Petrolimex vùng 1/vùng 2',
       '',
       'Lưu ý: mock data chỉ chạy local khi DEMO_MODE=true và NODE_ENV không phải production.'

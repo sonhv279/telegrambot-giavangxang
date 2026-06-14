@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import type { FuelAdjustmentPeriod, PriceSnapshot } from '../types.js';
-import { detectFuelGroup, detectGoldCategory, withSnapshotHash } from '../services/normalize.js';
+import { detectFuelGroup, withSnapshotHash } from '../services/normalize.js';
 import { parseVnd } from '../utils/price.js';
 import { nowIso } from '../utils/time.js';
 import { sha256 } from '../utils/hash.js';
@@ -27,9 +27,15 @@ const http = axios.create({
 
 const parseViDateTime = (value?: string): string => {
   if (!value) return nowIso();
-  const match = value.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+  const dateFirst = value.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+  const timeFirst = value.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const match = dateFirst
+    ? { day: dateFirst[1], month: dateFirst[2], year: dateFirst[3], hour: dateFirst[4], minute: dateFirst[5], second: dateFirst[6] ?? '0' }
+    : timeFirst
+      ? { hour: timeFirst[1], minute: timeFirst[2], second: timeFirst[3] ?? '0', day: timeFirst[4], month: timeFirst[5], year: timeFirst[6] }
+      : null;
   if (!match) return nowIso();
-  const [, day, month, year, hour, minute, second = '0'] = match;
+  const { day, month, year, hour, minute, second } = match;
   return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour) - 7, Number(minute), Number(second))).toISOString();
 };
 
@@ -43,9 +49,21 @@ const pnjPriceToVndPerLuong = (value: number): number => value * 10_000;
 
 export class RealCrawler {
   async crawlGold(): Promise<PriceSnapshot[]> {
-    const giavangSnapshots = await this.crawlGoldFromGiaVangOrg();
-    if (giavangSnapshots.length > 0) return giavangSnapshots;
+    const [giaVangResult, pnjResult] = await Promise.allSettled([
+      this.crawlGoldFromGiaVangOrg(),
+      this.crawlGoldFromPnj()
+    ]);
 
+    const snapshots = [
+      ...(giaVangResult.status === 'fulfilled' ? giaVangResult.value : []),
+      ...(pnjResult.status === 'fulfilled' ? pnjResult.value : [])
+    ];
+
+    if (snapshots.length === 0) throw new Error('No gold rows parsed from configured sources');
+    return snapshots;
+  }
+
+  private async crawlGoldFromPnj(): Promise<PriceSnapshot[]> {
     const response = await http.get<PnjGoldResponse>('https://edge-api.pnj.io/ecom-frontend/v1/get-gold-price?zone=00');
     const crawledAt = nowIso();
     const effectiveTime = parseViDateTime(response.data.updateDate);
@@ -55,17 +73,17 @@ export class RealCrawler {
       .map((row) => {
         const buy = toNumber(row.giamua);
         const sell = toNumber(row.giaban);
-        const productName = row.tensp?.trim();
+        const productName = row.masp === 'SJC' ? 'Vàng miếng SJC' : 'Vàng nhẫn 1 chỉ';
         if (!productName || buy === null || sell === null || buy <= 0 || sell <= 0) return null;
         const buyPrice = pnjPriceToVndPerLuong(buy);
         const sellPrice = pnjPriceToVndPerLuong(sell);
 
         return withSnapshotHash({
           type: 'gold',
-          source: 'PNJ',
+          source: 'PNJ API - TP. Hồ Chí Minh',
           productName,
-          productGroup: row.masp || productName,
-          category: detectGoldCategory(productName),
+          productGroup: 'PNJ API',
+          category: row.masp === 'SJC' ? 'gold_bar' : 'gold_ring',
           buyPrice,
           sellPrice,
           spread: sellPrice - buyPrice,

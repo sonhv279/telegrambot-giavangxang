@@ -27,10 +27,16 @@ export const detectRegion = (value: string): FuelRegion | null => {
 };
 
 export const isTrackedGoldProduct = (productName: string): boolean => {
+  return getTrackedGoldProductLabel(productName) !== null;
+};
+
+export const getTrackedGoldProductLabel = (productName: string): 'Vàng miếng SJC' | 'Vàng nhẫn 1 chỉ' | null => {
   const name = productName.toLowerCase();
   const isGoldBar = name.includes('vàng miếng sjc') || name.includes('vang mieng sjc');
-  const isOneChiRing = name.includes('vàng nhẫn 1 chỉ') || name.includes('vang nhan 1 chi') || name.includes('nhẫn sjc 1 chỉ');
-  return isGoldBar || isOneChiRing;
+  const isOneChiRing = name.includes('vàng nhẫn 1 chỉ') || name.includes('vang nhan 1 chi') || name.includes('nhẫn sjc 1 chỉ') || name.includes('nhẫn trơn pnj 999.9');
+  if (isGoldBar) return 'Vàng miếng SJC';
+  if (isOneChiRing) return 'Vàng nhẫn 1 chỉ';
+  return null;
 };
 
 export const withSnapshotHash = (snapshot: Omit<PriceSnapshot, 'rawHash'>): PriceSnapshot => {
