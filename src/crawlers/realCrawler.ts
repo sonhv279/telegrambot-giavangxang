@@ -43,11 +43,15 @@ const pnjPriceToVndPerLuong = (value: number): number => value * 10_000;
 
 export class RealCrawler {
   async crawlGold(): Promise<PriceSnapshot[]> {
+    const giavangSnapshots = await this.crawlGoldFromGiaVangOrg();
+    if (giavangSnapshots.length > 0) return giavangSnapshots;
+
     const response = await http.get<PnjGoldResponse>('https://edge-api.pnj.io/ecom-frontend/v1/get-gold-price?zone=00');
     const crawledAt = nowIso();
     const effectiveTime = parseViDateTime(response.data.updateDate);
 
     return (response.data.data ?? [])
+      .filter((row) => ['SJC', 'N24K'].includes(row.masp ?? ''))
       .map((row) => {
         const buy = toNumber(row.giamua);
         const sell = toNumber(row.giaban);
@@ -71,6 +75,73 @@ export class RealCrawler {
         });
       })
       .filter((item): item is PriceSnapshot => Boolean(item));
+  }
+
+  private async crawlGoldFromGiaVangOrg(): Promise<PriceSnapshot[]> {
+    const response = await http.get<string>('https://giavang.org/');
+    const crawledAt = nowIso();
+    const $ = cheerio.load(response.data);
+    const pageText = $.text().replace(/\s+/g, ' ');
+    const effectiveTime = parseViDateTime(pageText.match(/Cập nhật lúc\s+(\d{1,2}:\d{2}:\d{2}\s+\d{1,2}\/\d{1,2}\/\d{4})/)?.[1]);
+
+    return [
+      ...this.parseGiaVangComparisonTable($, '#gia_vang_sjc', 'Vàng miếng SJC', 'gold_bar', effectiveTime, crawledAt),
+      ...this.parseGiaVangComparisonTable($, '#gia_vang_nhan', 'Vàng nhẫn 1 chỉ', 'gold_ring', effectiveTime, crawledAt)
+    ];
+  }
+
+  private parseGiaVangComparisonTable(
+    $: cheerio.CheerioAPI,
+    headingSelector: string,
+    productName: string,
+    category: 'gold_bar' | 'gold_ring',
+    effectiveTime: string,
+    crawledAt: string
+  ): PriceSnapshot[] {
+    const table = $(headingSelector).nextAll('table').first();
+    const snapshots: PriceSnapshot[] = [];
+    let currentRegion = '';
+
+    table.find('tbody tr').each((_, row) => {
+      const cells = $(row).find('th,td').map((__, cell) => $(cell).text().replace(/\s+/g, ' ').trim()).get();
+      if (cells.length < 3 || cells.some((cell) => cell.includes('https://giavang.org'))) return;
+
+      let system: string;
+      let buyRaw: string;
+      let sellRaw: string;
+      if (cells.length >= 4) {
+        currentRegion = cells[0];
+        system = cells[1];
+        buyRaw = cells[2];
+        sellRaw = cells[3];
+      } else {
+        system = cells[0];
+        buyRaw = cells[1];
+        sellRaw = cells[2];
+      }
+
+      const buy = parseVnd(buyRaw);
+      const sell = parseVnd(sellRaw);
+      if (!system || buy === null || sell === null || buy <= 0 || sell <= 0) return;
+      const buyPrice = buy * 1_000;
+      const sellPrice = sell * 1_000;
+
+      snapshots.push(withSnapshotHash({
+        type: 'gold',
+        source: currentRegion ? `${system} - ${currentRegion}` : system,
+        productName,
+        productGroup: system,
+        category,
+        buyPrice,
+        sellPrice,
+        spread: sellPrice - buyPrice,
+        unit: 'VND/lượng',
+        effectiveTime,
+        crawledAt
+      }));
+    });
+
+    return snapshots;
   }
 
   async crawlFuel(): Promise<{ snapshots: PriceSnapshot[]; period: FuelAdjustmentPeriod }> {

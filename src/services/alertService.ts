@@ -1,6 +1,7 @@
 import { env } from '../config/env.js';
 import type { PriceSnapshot, User } from '../types.js';
 import { calculatePriceChange, shouldAlertGoldChange } from './goldService.js';
+import { isTrackedGoldProduct } from './normalize.js';
 import type { PriceSnapshotRepository } from '../repositories/priceSnapshots.js';
 import type { UserRepository } from '../repositories/users.js';
 
@@ -20,7 +21,7 @@ export class AlertService {
     const activeUsers = await this.users.listActiveUsers();
     const candidates: GoldAlertCandidate[] = [];
 
-    for (const snapshot of newSnapshots.filter((item) => item.type === 'gold')) {
+    for (const snapshot of newSnapshots.filter((item) => item.type === 'gold' && isTrackedGoldProduct(item.productName))) {
       const previous = await this.snapshots.previousSnapshot(snapshot);
       if (!previous) continue;
       const change = calculatePriceChange(snapshot, previous);

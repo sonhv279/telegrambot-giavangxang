@@ -3,23 +3,39 @@ import { estimateRegion2Delta, groupFuelByRegion } from '../services/fuelService
 import { getBestGoldPrices } from '../services/goldService.js';
 import { formatDateTimeVi, formatDateVi } from '../utils/time.js';
 import { formatSignedVnd, formatVnd } from '../utils/price.js';
+import { isTrackedGoldProduct } from '../services/normalize.js';
 
 const categoryLabel = (category: GoldCategory): string => category === 'gold_bar' ? 'Vàng miếng' : 'Vàng nhẫn';
 
 export const formatGoldList = (snapshots: PriceSnapshot[]): string => {
-  if (snapshots.length === 0) return 'Chưa có dữ liệu giá vàng.';
-  const lines = ['🥇 Giá vàng mới nhất'];
-  for (const item of snapshots.filter((snapshot) => snapshot.type === 'gold')) {
-    lines.push('', `${categoryLabel(item.category as GoldCategory)} - ${item.source}`, item.productName, `Mua: ${formatVnd(item.buyPrice)}`, `Bán: ${formatVnd(item.sellPrice)}`, `Cập nhật: ${formatDateTimeVi(item.crawledAt)}`);
+  const goldSnapshots = snapshots.filter((snapshot) => snapshot.type === 'gold' && isTrackedGoldProduct(snapshot.productName));
+  if (goldSnapshots.length === 0) return 'Chưa có dữ liệu giá vàng.';
+  const lines = ['🥇 Giá vàng mới nhất', 'Chỉ hiển thị: Vàng miếng SJC và Vàng nhẫn 1 chỉ'];
+
+  for (const productName of ['Vàng miếng SJC', 'Vàng nhẫn 1 chỉ']) {
+    const items = goldSnapshots.filter((snapshot) => snapshot.productName === productName);
+    if (items.length === 0) continue;
+    const bestBuy = [...items].sort((a, b) => Number(a.sellPrice) - Number(b.sellPrice))[0];
+    const bestSell = [...items].sort((a, b) => Number(b.buyPrice) - Number(a.buyPrice))[0];
+    const latest = [...items].sort((a, b) => b.crawledAt.localeCompare(a.crawledAt))[0];
+
+    lines.push('', productName);
+    lines.push(`🏆 Mua tốt nhất: ${bestBuy.source} - ${formatVnd(bestBuy.sellPrice)}`);
+    lines.push(`🏆 Bán tốt nhất: ${bestSell.source} - ${formatVnd(bestSell.buyPrice)}`);
+    lines.push(`Cập nhật: ${formatDateTimeVi(latest.crawledAt)}`);
   }
+
+  lines.push('', 'Xem so sánh tốt nhất: /gold_best');
   return lines.join('\n');
 };
 
 export const formatGoldBest = (snapshots: PriceSnapshot[]): string => {
+  const tracked = snapshots.filter((snapshot) => isTrackedGoldProduct(snapshot.productName));
   const lines = ['🏆 Nơi mua/bán vàng tốt nhất'];
   for (const category of ['gold_bar', 'gold_ring'] as GoldCategory[]) {
-    const best = getBestGoldPrices(snapshots, category);
-    lines.push('', categoryLabel(category));
+    const best = getBestGoldPrices(tracked, category);
+    const productName = category === 'gold_bar' ? 'Vàng miếng SJC' : 'Vàng nhẫn 1 chỉ';
+    lines.push('', productName);
     lines.push(`Mua vàng tốt nhất: ${best.bestBuy ? `${best.bestBuy.source} - ${formatVnd(best.bestBuy.sellPrice)}` : 'N/A'}`);
     lines.push(`Bán vàng tốt nhất: ${best.bestSell ? `${best.bestSell.source} - ${formatVnd(best.bestSell.buyPrice)}` : 'N/A'}`);
   }
@@ -54,8 +70,9 @@ export const formatGoldAlert = (snapshot: PriceSnapshot): string => [
 export const formatFuelAlert = (snapshots: PriceSnapshot[]): string => ['⛽ Có bảng giá xăng dầu mới', '', formatFuelList(snapshots)].join('\n');
 
 export const formatDailyDigest = (gold: PriceSnapshot[], fuel: PriceSnapshot[], _user?: User): string => {
-  const goldBar = gold.filter((item) => item.category === 'gold_bar');
-  const goldRing = gold.filter((item) => item.category === 'gold_ring');
+  const trackedGold = gold.filter((item) => isTrackedGoldProduct(item.productName));
+  const goldBar = trackedGold.filter((item) => item.category === 'gold_bar');
+  const goldRing = trackedGold.filter((item) => item.category === 'gold_ring');
   const fuelRegion2Delta = estimateRegion2Delta(fuel);
   const lines = [
     '📊 BẢN TIN THỊ TRƯỜNG SÁNG',

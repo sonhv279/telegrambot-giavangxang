@@ -5,7 +5,7 @@ import { calculatePriceChange, getBestGoldPrices, shouldAlertGoldChange } from '
 const gold = (source: string, buyPrice: number, sellPrice: number): PriceSnapshot => ({
   type: 'gold',
   source,
-  productName: `${source} SJC`,
+  productName: 'Vàng miếng SJC',
   category: 'gold_bar',
   buyPrice,
   sellPrice,

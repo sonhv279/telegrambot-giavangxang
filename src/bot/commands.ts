@@ -117,7 +117,7 @@ export const registerCommands = (bot: Telegraf): void => {
     await ensureUser(ctx);
     await ctx.reply([
       'Nguồn dữ liệu hiện tại:',
-      'Gold: PNJ API khu vực Hồ Chí Minh',
+      'Gold: giavang.org, chỉ lấy Vàng miếng SJC và Vàng nhẫn 1 chỉ',
       'Fuel: GiaXangHomNay bảng Petrolimex vùng 1/vùng 2',
       '',
       'Lưu ý: mock data chỉ chạy local khi DEMO_MODE=true và NODE_ENV không phải production.'

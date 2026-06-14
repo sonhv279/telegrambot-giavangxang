@@ -1,4 +1,5 @@
 import type { GoldBestPrices, GoldCategory, PriceChange, PriceSnapshot } from '../types.js';
+import { isTrackedGoldProduct } from './normalize.js';
 
 export const calculatePriceChange = (current: PriceSnapshot, previous?: PriceSnapshot): PriceChange => ({
   buyChange: current.buyPrice !== null && current.buyPrice !== undefined && previous?.buyPrice !== null && previous?.buyPrice !== undefined
@@ -13,7 +14,7 @@ export const calculatePriceChange = (current: PriceSnapshot, previous?: PriceSna
 });
 
 export const getBestGoldPrices = (snapshots: PriceSnapshot[], category: GoldCategory): GoldBestPrices => {
-  const items = snapshots.filter((item) => item.type === 'gold' && item.category === category);
+  const items = snapshots.filter((item) => item.type === 'gold' && item.category === category && isTrackedGoldProduct(item.productName));
   const sellCandidates = items.filter((item) => item.sellPrice !== null && item.sellPrice !== undefined);
   const buyCandidates = items.filter((item) => item.buyPrice !== null && item.buyPrice !== undefined);
 

@@ -26,6 +26,13 @@ export const detectRegion = (value: string): FuelRegion | null => {
   return null;
 };
 
+export const isTrackedGoldProduct = (productName: string): boolean => {
+  const name = productName.toLowerCase();
+  const isGoldBar = name.includes('vàng miếng sjc') || name.includes('vang mieng sjc');
+  const isOneChiRing = name.includes('vàng nhẫn 1 chỉ') || name.includes('vang nhan 1 chi') || name.includes('nhẫn sjc 1 chỉ');
+  return isGoldBar || isOneChiRing;
+};
+
 export const withSnapshotHash = (snapshot: Omit<PriceSnapshot, 'rawHash'>): PriceSnapshot => {
   const rawHash = sha256([
     snapshot.type,
