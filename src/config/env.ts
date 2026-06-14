@@ -12,7 +12,7 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL ?? '',
   publicAppUrl: process.env.PUBLIC_APP_URL ?? '',
   cronSecret: process.env.CRON_SECRET ?? '',
-  timezone: process.env.TZ ?? 'Asia/Ho_Chi_Minh',
+  timezone: process.env.APP_TIMEZONE ?? 'Asia/Ho_Chi_Minh',
   logLevel: process.env.LOG_LEVEL ?? 'info',
   demoMode: (process.env.DEMO_MODE ?? 'true') === 'true',
   goldDefaultThreshold: numberFromEnv('GOLD_DEFAULT_THRESHOLD', 200_000),

@@ -19,7 +19,7 @@ BOT_TOKEN=your_telegram_bot_token
 DATABASE_URL=postgresql://...
 PUBLIC_APP_URL=https://your-vercel-app.vercel.app
 CRON_SECRET=some-long-random-secret
-TZ=Asia/Ho_Chi_Minh
+APP_TIMEZONE=Asia/Ho_Chi_Minh
 LOG_LEVEL=info
 DEMO_MODE=true
 GOLD_DEFAULT_THRESHOLD=200000
@@ -47,12 +47,14 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 
 6. Mở Telegram và gửi `/start` cho bot.
 
-## Cron
+## Cron Cho Vercel Hobby
 
-`vercel.json` cấu hình một cron duy nhất:
+Vercel Hobby chỉ cho cron chạy theo giới hạn thấp, thường không phù hợp với bot cần kiểm tra giá thường xuyên. Repo này không cấu hình Vercel Cron trực tiếp để tránh lỗi deploy trên Hobby.
+
+Dùng cron miễn phí bên ngoài để gọi endpoint này mỗi phút:
 
 ```text
-/api/cron/tick mỗi phút
+https://your-vercel-app.vercel.app/api/cron/tick
 ```
 
 Endpoint này tự quyết định:
@@ -61,16 +63,21 @@ Endpoint này tự quyết định:
 - Khi nào crawl xăng dầu.
 - Khi nào gửi daily digest 09:00 Asia/Ho_Chi_Minh.
 
-Nếu Vercel Free/Hobby giới hạn cron theo tài khoản của bạn, dùng cron miễn phí bên ngoài để gọi endpoint này mỗi phút:
+Các dịch vụ cron miễn phí có thể dùng:
 
 - cron-job.org
 - UptimeRobot
 - GitHub Actions schedule
 
-URL cần gọi:
+### Cấu Hình cron-job.org
+
+Tạo cron job:
 
 ```text
-https://your-vercel-app.vercel.app/api/cron/tick
+Title: giavangxang tick
+URL: https://your-vercel-app.vercel.app/api/cron/tick
+Schedule: every 1 minute
+Method: GET
 ```
 
 Header:
