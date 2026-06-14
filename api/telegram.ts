@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createBot } from '../src/bot/index.js';
 import { ensureDatabase } from '../src/container.js';
+import { logger } from '../src/logger/index.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -14,7 +15,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  await ensureDatabase();
-  await bot.handleUpdate(req.body);
-  res.status(200).json({ ok: true });
+  try {
+    await ensureDatabase();
+    await bot.handleUpdate(req.body);
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error({ error }, 'telegram webhook failed');
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 }
