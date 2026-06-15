@@ -9,6 +9,7 @@ export const telegramCommands = [
   { command: 'daily_on', description: 'Bật bản tin sáng' },
   { command: 'daily_off', description: 'Tắt bản tin sáng' },
   { command: 'daily_status', description: 'Trạng thái bản tin sáng' },
+  { command: 'digest_preview', description: 'Xem thử bản tin sáng' },
   { command: 'mute', description: 'Tạm dừng thông báo' },
   { command: 'unmute', description: 'Bật lại thông báo' },
   { command: 'sources', description: 'Xem nguồn dữ liệu' }

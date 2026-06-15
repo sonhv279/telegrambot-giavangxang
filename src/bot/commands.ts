@@ -41,6 +41,7 @@ export const registerCommands = (bot: Telegraf): void => {
       '/daily_on - bật bản tin sáng',
       '/daily_off - tắt bản tin sáng',
       '/daily_status - trạng thái bản tin sáng',
+      '/digest_preview - xem thử bản tin sáng',
       '/mute - tạm dừng thông báo',
       '/unmute - bật lại thông báo',
       '/sources - nguồn dữ liệu'
