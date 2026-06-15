@@ -2,9 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createBot } from '../../src/bot/index.js';
 import { env } from '../../src/config/env.js';
 import { currentVietnamTimeParts, runDailyDigestJob, runFuelJob, runGoldJob, shouldRunDailyDigestNow, shouldRunFuelNow, shouldRunGoldNow } from '../../src/services/jobs.js';
+import { isCronAuthorized } from '../../src/utils/requestAuth.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  if (env.cronSecret && req.headers.authorization !== `Bearer ${env.cronSecret}`) {
+  if (!isCronAuthorized(req.headers, env.cronSecret)) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
