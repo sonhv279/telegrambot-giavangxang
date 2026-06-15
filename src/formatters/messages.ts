@@ -1,5 +1,5 @@
 import type { GoldCategory, PriceChange, PriceSnapshot, User } from '../types.js';
-import { estimateRegion2Delta, groupFuelByRegion } from '../services/fuelService.js';
+import { groupFuelByRegion } from '../services/fuelService.js';
 import { calculatePriceChange, getBestGoldPrices } from '../services/goldService.js';
 import { formatDateTimeVi, formatDateVi } from '../utils/time.js';
 import { formatSignedVnd, formatVnd } from '../utils/price.js';
@@ -111,42 +111,58 @@ export const formatGoldAlert = (snapshot: PriceSnapshot): string => [
 
 export const formatFuelAlert = (snapshots: PriceSnapshot[]): string => ['⛽ Có bảng giá xăng dầu mới', '', formatFuelList(snapshots)].join('\n');
 
+const formatDailyGoldPrice = (label: string, snapshot?: PriceSnapshot): string => [
+  `${label}:`,
+  `- Giá mua: ${formatVnd(snapshot?.buyPrice)}`,
+  `- Giá bán: ${formatVnd(snapshot?.sellPrice)}`
+].join('\n');
+
+const formatDailyGoldBest = (snapshots: PriceSnapshot[]): string => {
+  const tracked = snapshots.filter(isHoChiMinhGiaVangGold);
+  if (tracked.length === 0) return '🏆 Nơi mua/bán vàng tốt nhất TPHCM\nChưa có dữ liệu.';
+
+  const lines = ['🏆 Nơi mua/bán vàng tốt nhất TPHCM'];
+  for (const category of ['gold_bar', 'gold_ring'] as GoldCategory[]) {
+    const productName = category === 'gold_bar' ? 'Vàng miếng SJC' : 'Vàng nhẫn 1 chỉ';
+    const best = getBestGoldPrices(tracked, category);
+    if (!best.bestBuy && !best.bestSell) continue;
+
+    lines.push('', `${productName}:`);
+    lines.push(`- Mua vàng tốt nhất (giá bán thấp nhất): ${best.bestBuy ? `${goldSourceName(best.bestBuy.source)} - ${formatVnd(best.bestBuy.sellPrice)}` : 'N/A'}`);
+    lines.push(`- Bán vàng tốt nhất (giá mua cao nhất): ${best.bestSell ? `${goldSourceName(best.bestSell.source)} - ${formatVnd(best.bestSell.buyPrice)}` : 'N/A'}`);
+  }
+
+  return lines.join('\n');
+};
+
 export const formatDailyDigest = (gold: PriceSnapshot[], fuel: PriceSnapshot[], _user?: User): string => {
   const trackedGold = gold.filter((item) => isTrackedGoldProduct(item.productName));
   const goldBar = trackedGold.filter((item) => item.category === 'gold_bar');
   const goldRing = trackedGold.filter((item) => item.category === 'gold_ring');
-  const fuelRegion2Delta = estimateRegion2Delta(fuel);
   const lines = [
     '📊 BẢN TIN THỊ TRƯỜNG SÁNG',
     `📅 ${formatDateVi()} - 09:00`,
     '',
     '━━━━━━━━━━━━━━',
     '',
-    '🥇 VÀNG MIẾNG',
-    goldBar[0] ? `${goldBar[0].source} ${goldBar[0].productName}\nMua: ${formatVnd(goldBar[0].buyPrice)}\nBán: ${formatVnd(goldBar[0].sellPrice)}\nBiến động: Chưa đủ dữ liệu so sánh` : 'Chưa có dữ liệu',
-    formatGoldBest(goldBar),
+    '🥇 GIÁ VÀNG',
+    formatDailyGoldPrice('Vàng miếng SJC', goldBar[0]),
+    '',
+    formatDailyGoldPrice('Vàng nhẫn 1 chỉ', goldRing[0]),
+    '',
+    formatDailyGoldBest(gold),
     '',
     '━━━━━━━━━━━━━━',
     '',
-    '💍 VÀNG NHẪN',
-    goldRing[0] ? `${goldRing[0].source} ${goldRing[0].productName}\nMua: ${formatVnd(goldRing[0].buyPrice)}\nBán: ${formatVnd(goldRing[0].sellPrice)}\nBiến động: Chưa đủ dữ liệu so sánh` : 'Chưa có dữ liệu',
-    formatGoldBest(goldRing),
-    '',
-    '━━━━━━━━━━━━━━',
-    '',
-    '⛽ XĂNG DẦU (VÙNG 1)'
+    '⛽ XĂNG DẦU'
   ];
 
   const fuelGroups = groupFuelByRegion(fuel);
-  let visible = 0;
   for (const [name, group] of fuelGroups) {
-    if (visible >= 7) continue;
-    lines.push(`${name}: ${formatVnd(group.region1?.sellPrice)}`);
-    visible += 1;
+    lines.push('', `${name}:`, `- Vùng 1: ${formatVnd(group.region1?.sellPrice)}`, `- Vùng 2: ${formatVnd(group.region2?.sellPrice)}`);
   }
-  if (fuelGroups.size > visible) lines.push(`Còn ${fuelGroups.size - visible} sản phẩm khác`);
-  if (fuelRegion2Delta !== null) lines.push(`Vùng 2 cao hơn/thấp hơn Vùng 1 khoảng ${formatSignedVnd(fuelRegion2Delta)}`);
-  lines.push('Chi tiết xem: /fuel');
-  lines.push('', '━━━━━━━━━━━━━━', '', '⚡ ĐIỂM NHẤN', 'Theo dõi /gold_best để xem nơi mua/bán tốt nhất.', '', `🕒 Dữ liệu cập nhật: ${formatDateTimeVi(gold[0]?.crawledAt ?? fuel[0]?.crawledAt)}`, `📡 Nguồn: ${[...new Set([...gold, ...fuel].map((item) => item.source))].join(', ') || 'N/A'}`);
+  if (fuelGroups.size === 0) lines.push('Chưa có dữ liệu giá xăng dầu.');
+
+  lines.push('', '━━━━━━━━━━━━━━', '', `🕒 Dữ liệu cập nhật: ${formatDateTimeVi(gold[0]?.crawledAt ?? fuel[0]?.crawledAt)}`);
   return lines.join('\n');
 };
