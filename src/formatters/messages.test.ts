@@ -55,4 +55,15 @@ describe('message formatters', () => {
     expect(message).toContain('Bán vàng tốt nhất (giá mua cao nhất): Mi Hồng - 145.500.000 đ');
     expect(message).not.toContain('PNJ API:');
   });
+
+  it('omits missing gold categories in best-price sections', () => {
+    const message = formatGoldBest([
+      gold('Mi Hồng - TP. Hồ Chí Minh', 'Vàng miếng SJC', 'gold_bar', 145_500_000, 147_000_000),
+      gold('Ngọc Thẩm - TP. Hồ Chí Minh', 'Vàng miếng SJC', 'gold_bar', 143_000_000, 146_500_000)
+    ]);
+
+    expect(message).toContain('Vàng miếng SJC');
+    expect(message).not.toContain('Vàng nhẫn 1 chỉ');
+    expect(message).not.toContain('N/A');
+  });
 });

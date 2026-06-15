@@ -65,11 +65,12 @@ export const formatGoldBest = (snapshots: PriceSnapshot[]): string => {
   if (tracked.length === 0) return 'Chưa có dữ liệu so sánh giá vàng tại TP. Hồ Chí Minh.';
   const lines = ['🏆 Nơi mua/bán vàng tốt nhất TPHCM', 'Đơn vị: VND/lượng'];
   for (const category of ['gold_bar', 'gold_ring'] as GoldCategory[]) {
-    const best = getBestGoldPrices(tracked, category);
     const productName = category === 'gold_bar' ? 'Vàng miếng SJC' : 'Vàng nhẫn 1 chỉ';
     const items = tracked
       .filter((snapshot) => snapshot.category === category)
       .sort((a, b) => goldSourceName(a.source).localeCompare(goldSourceName(b.source), 'vi'));
+    if (items.length === 0) continue;
+    const best = getBestGoldPrices(tracked, category);
     lines.push('', productName);
     lines.push(`Mua vàng tốt nhất (giá bán thấp nhất): ${best.bestBuy ? `${goldSourceName(best.bestBuy.source)} - ${formatVnd(best.bestBuy.sellPrice)}` : 'N/A'}`);
     lines.push(`Bán vàng tốt nhất (giá mua cao nhất): ${best.bestSell ? `${goldSourceName(best.bestSell.source)} - ${formatVnd(best.bestSell.buyPrice)}` : 'N/A'}`);
