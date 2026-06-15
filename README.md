@@ -63,7 +63,7 @@ Endpoint này tự quyết định:
 
 - Khi nào crawl vàng.
 - Khi nào crawl xăng dầu.
-- Khi nào gửi daily digest 09:00 Asia/Ho_Chi_Minh.
+- Khi nào gửi daily digest trong cửa sổ 09:00-09:09 Asia/Ho_Chi_Minh, có dedupe mỗi ngày.
 
 Các dịch vụ cron miễn phí có thể dùng:
 

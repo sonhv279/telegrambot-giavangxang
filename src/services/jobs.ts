@@ -48,7 +48,7 @@ export const shouldRunFuelNow = (date = new Date()): boolean => {
 
 export const shouldRunDailyDigestNow = (date = new Date()): boolean => {
   const { hour, minute } = currentVietnamTimeParts(date);
-  return hour === 9 && minute === 0;
+  return hour === 9 && minute >= 0 && minute < 10;
 };
 
 export const runGoldJob = async (bot: Telegraf | null): Promise<{ crawled: number; alerts: number }> => {
